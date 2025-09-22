@@ -128,10 +128,25 @@ class MockPaymentRepository implements IPaymentRepository {
 
   @override
   Stream<List<Payment>> recentPayments({int limit = 20}) {
-    // Return current payments list and then listen for updates
-    final payments = _payments.take(limit).toList();
-    _controller.add(payments);
-    return _controller.stream;
+    // Ensure mock data is initialized
+    _initializeMockData();
+
+    // Emit initial data immediately, then listen for updates
+    final controller = StreamController<List<Payment>>();
+
+    // Add current data immediately
+    controller.add(_payments.take(limit).toList());
+
+    // Listen for future updates
+    final subscription = _controller.stream.listen((payments) {
+      controller.add(payments.take(limit).toList());
+    });
+
+    controller.onCancel = () {
+      subscription.cancel();
+    };
+
+    return controller.stream;
   }
 
   @override
