@@ -12,7 +12,11 @@ class MockAuthRepository implements IAuthRepository {
   @override
   Future<User> signIn(String email, String password) async {
     if (email == demoEmail && password == demoPassword) {
-      _user = User(id: 'demo', email: demoEmail);
+      _user = User(
+        id: 'demo',
+        email: demoEmail,
+        balance: 5247.83, // Demo balance
+      );
       return _user!;
     }
     throw Exception('Invalid credentials');
@@ -21,7 +25,11 @@ class MockAuthRepository implements IAuthRepository {
   @override
   Future<User> signUp(String email, String password) async {
     // Mock: always succeed, assign demo user
-    _user = User(id: 'demo', email: email);
+    _user = User(
+      id: 'demo',
+      email: email,
+      balance: 5247.83, // Demo balance
+    );
     return _user!;
   }
 

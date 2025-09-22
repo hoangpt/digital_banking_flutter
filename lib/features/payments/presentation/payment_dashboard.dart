@@ -7,6 +7,8 @@ import '../domain/payment.dart';
 import 'widgets/nfc_panel.dart';
 import 'widgets/qr_panel.dart';
 import 'widgets/history_panel.dart';
+import 'widgets/balance_card.dart';
+import '../../auth/domain/user.dart';
 
 class PaymentDashboard extends ConsumerStatefulWidget {
   const PaymentDashboard({super.key});
@@ -84,6 +86,7 @@ class _PaymentDashboardState extends ConsumerState<PaymentDashboard>
   @override
   Widget build(BuildContext context) {
     final paymentRepo = ref.watch(paymentRepoProvider);
+    final authRepo = ref.watch(authRepoProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -107,9 +110,18 @@ class _PaymentDashboardState extends ConsumerState<PaymentDashboard>
       ),
       body: Column(
         children: [
+          // Balance Card
+          FutureBuilder<User?>(
+            future: authRepo.currentUser(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data != null) {
+                return BalanceCard(user: snapshot.data!);
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           // Tab Content
           Expanded(
-            flex: 2,
             child: TabBarView(
               controller: _tabController,
               children: [
@@ -124,152 +136,8 @@ class _PaymentDashboardState extends ConsumerState<PaymentDashboard>
               ],
             ),
           ),
-
-          // Recent Transactions
-          Expanded(
-            flex: 3,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Recent Transactions',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  Expanded(
-                    child: StreamBuilder<List<Payment>>(
-                      stream: paymentRepo.recentPayments(limit: 10),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.receipt_long,
-                                  size: 64,
-                                  color: Theme.of(context).colorScheme.outline,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No transactions yet',
-                                  style: Theme.of(context).textTheme.bodyLarge
-                                      ?.copyWith(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.outline,
-                                      ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Try making a payment using NFC, QR, or Card',
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.outline,
-                                      ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
-                        return ListView.builder(
-                          itemCount: snapshot.data!.length,
-                          itemBuilder: (context, index) {
-                            final payment = snapshot.data![index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: _getPaymentTypeColor(
-                                    payment.type,
-                                  ),
-                                  child: Icon(
-                                    _getPaymentTypeIcon(payment.type),
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                title: Text(payment.merchant),
-                                subtitle: Text(
-                                  '${payment.type.name.toUpperCase()} • ${_formatDateTime(payment.ts)}',
-                                ),
-                                trailing: Text(
-                                  '\$${payment.amount.toStringAsFixed(2)}',
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color:
-                                            payment.status ==
-                                                PaymentStatus.success
-                                            ? Colors.green
-                                            : payment.status ==
-                                                  PaymentStatus.failed
-                                            ? Colors.red
-                                            : Colors.orange,
-                                      ),
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );
-  }
-
-  Color _getPaymentTypeColor(PaymentType type) {
-    switch (type) {
-      case PaymentType.nfc:
-        return Colors.blue;
-      case PaymentType.qr:
-        return Colors.green;
-      case PaymentType.card:
-        return Colors.purple;
-      case PaymentType.topup:
-        return Colors.orange;
-      case PaymentType.transfer:
-        return Colors.teal;
-    }
-  }
-
-  IconData _getPaymentTypeIcon(PaymentType type) {
-    switch (type) {
-      case PaymentType.nfc:
-        return Icons.nfc;
-      case PaymentType.qr:
-        return Icons.qr_code;
-      case PaymentType.card:
-        return Icons.credit_card;
-      case PaymentType.topup:
-        return Icons.add_circle;
-      case PaymentType.transfer:
-        return Icons.send;
-    }
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }
