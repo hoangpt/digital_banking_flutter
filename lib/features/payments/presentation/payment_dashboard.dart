@@ -99,18 +99,10 @@ class _PaymentDashboardState extends ConsumerState<PaymentDashboard>
             tooltip: 'Sign Out',
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.nfc), text: 'NFC'),
-            Tab(icon: Icon(Icons.qr_code), text: 'QR Code'),
-            Tab(icon: Icon(Icons.history), text: 'History'),
-          ],
-        ),
       ),
       body: Column(
         children: [
-          // Balance Card
+          // Balance Card - Between AppBar and Tabs
           FutureBuilder<User?>(
             future: authRepo.currentUser(),
             builder: (context, snapshot) {
@@ -119,6 +111,18 @@ class _PaymentDashboardState extends ConsumerState<PaymentDashboard>
               }
               return const SizedBox.shrink();
             },
+          ),
+          // Tab Bar
+          Container(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            child: TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(icon: Icon(Icons.nfc), text: 'NFC'),
+                Tab(icon: Icon(Icons.qr_code), text: 'QR Code'),
+                Tab(icon: Icon(Icons.history), text: 'History'),
+              ],
+            ),
           ),
           // Tab Content
           Expanded(
